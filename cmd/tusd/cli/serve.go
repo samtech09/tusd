@@ -35,6 +35,7 @@ func Serve() {
 		NotifyTerminatedUploads: true,
 		NotifyUploadProgress:    true,
 		NotifyCreatedUploads:    true,
+		TokenPassphrase:         Flags.TokenPassphrase,
 	}
 
 	if err := SetupPreHooks(&config); err != nil {
@@ -67,6 +68,10 @@ func Serve() {
 	}
 
 	stdout.Printf("Supported tus extensions: %s\n", handler.SupportedExtensions())
+
+	if Flags.TokenPassphrase != "" {
+		stdout.Printf("Tokens enabled. Valid token will be required to upload files.\n")
+	}
 
 	if basepath == "/" {
 		// If the basepath is set to the root path, only install the tusd handler

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"math"
@@ -13,6 +14,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/tus/tusd/internal/tokens"
 )
 
 const UploadLengthDeferred = "1"
@@ -70,6 +73,7 @@ var (
 	ErrUploadLengthAndUploadDeferLength = NewHTTPError(errors.New("provided both Upload-Length and Upload-Defer-Length"), http.StatusBadRequest)
 	ErrInvalidUploadDeferLength         = NewHTTPError(errors.New("invalid Upload-Defer-Length header"), http.StatusBadRequest)
 	ErrUploadStoppedByServer            = NewHTTPError(errors.New("upload has been stopped by server"), http.StatusBadRequest)
+	ErrInvalidToken                     = NewHTTPError(errors.New("token validation failed"), http.StatusForbidden)
 
 	errReadTimeout     = errors.New("read tcp: i/o timeout")
 	errConnectionReset = errors.New("read tcp: connection reset by peer")
@@ -220,6 +224,14 @@ func (handler *UnroutedHandler) Middleware(h http.Handler) http.Handler {
 		handler.log("RequestIncoming", "method", r.Method, "path", r.URL.Path, "requestId", getRequestId(r))
 
 		handler.Metrics.incRequestsTotal(r.Method)
+
+		if handler.config.TokenPassphrase != "" && (r.Method == "POST" || r.Method == "DELETE") {
+			err := tokens.ValidateToken(r)
+			if err != nil {
+				handler.sendError(w, r, fmt.Errorf("invalid token: %s", err.Error()))
+				return
+			}
+		}
 
 		header := w.Header()
 

@@ -6,3 +6,4 @@ node_modules/
 ./tusd
 tusd_*_*
 .idea/
+releases

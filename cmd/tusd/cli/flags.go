@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/tus/tusd/cmd/tusd/cli/hooks"
+	"github.com/tus/tusd/internal/tokens"
 )
 
 var Flags struct {
@@ -59,6 +60,7 @@ var Flags struct {
 	TLSCertFile             string
 	TLSKeyFile              string
 	TLSMode                 string
+	TokenPassphrase         string
 
 	CPUProfile string
 }
@@ -108,6 +110,8 @@ func ParseFlags() {
 	flag.StringVar(&Flags.TLSCertFile, "tls-certificate", "", "Path to the file containing the x509 TLS certificate to be used. The file should also contain any intermediate certificates and the CA certificate.")
 	flag.StringVar(&Flags.TLSKeyFile, "tls-key", "", "Path to the file containing the key for the TLS certificate.")
 	flag.StringVar(&Flags.TLSMode, "tls-mode", "tls12", "Specify which TLS mode to use; valid modes are tls13, tls12, and tls12-strong.")
+	flag.StringVar(&Flags.TokenPassphrase, "token-passphrase", "", "Passphrase to decrypt auth-tokens, if not set token-validation will be disabled.")
+
 	flag.StringVar(&Flags.CPUProfile, "cpuprofile", "", "write cpu profile to file")
 	flag.Parse()
 
@@ -129,6 +133,10 @@ func ParseFlags() {
 			pprof.StopCPUProfile()
 			fmt.Println("Stopped CPU profile")
 		}()
+	}
+
+	if Flags.TokenPassphrase != "" {
+		tokens.Init(Flags.TokenPassphrase)
 	}
 }
 

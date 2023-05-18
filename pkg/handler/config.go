@@ -58,6 +58,10 @@ type Config struct {
 	// a response is returned to the client. Error responses from the callback will be passed
 	// back to the client. This can be used to implement post-processing validation.
 	PreFinishResponseCallback func(hook HookEvent) error
+
+	// TokenPassphrase if set will enable token validation for each request.
+	// Tokens should be encrypted with same passphrase using AES-128 CFB encrypter.
+	TokenPassphrase string
 }
 
 func (config *Config) validate() error {
