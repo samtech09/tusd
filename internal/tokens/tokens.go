@@ -30,14 +30,14 @@ func ValidateToken(r *http.Request) error {
 	if token == "" {
 		return fmt.Errorf("invalid token or token missing")
 	}
-	fmt.Printf("Token: %s\n", token)
+	//fmt.Printf("Token: %s\n", token)
 
 	// try to decrypt token
 	dec, err := decrypt(token)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Decrypted: %s\n", dec)
+	//fmt.Printf("Decrypted: %s\n", dec)
 
 	// make sure token is valid - should be generated within past 2 minutes
 	// token is time as UnixNano
