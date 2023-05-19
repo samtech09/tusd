@@ -1,7 +1,6 @@
 package tokens
 
 import (
-	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/hex"
@@ -31,13 +30,14 @@ func ValidateToken(r *http.Request) error {
 	if token == "" {
 		return fmt.Errorf("invalid token or token missing")
 	}
+	fmt.Printf("Token: %s\n", token)
 
 	// try to decrypt token
 	dec, err := decrypt(token)
 	if err != nil {
 		return err
 	}
-	//fmt.Println(dec)
+	fmt.Printf("Decrypted: %s\n", dec)
 
 	// make sure token is valid - should be generated within past 2 minutes
 	// token is time as UnixNano
@@ -68,18 +68,14 @@ func decrypt(ciphertext string) (string, error) {
 	encbytes, err := hex.DecodeString(ciphertext)
 	out := make([]byte, len(encbytes))
 
-	aesDecrypter := cipher.NewCFBDecrypter(block, _iv)
+	aesDecrypter := cipher.NewCBCDecrypter(block, _iv)
 	if err != nil {
 		return "", err
 	}
-	aesDecrypter.XORKeyStream(out, encbytes)
+	//aesDecrypter.XORKeyStream(out, encbytes)
+	aesDecrypter.CryptBlocks(out, encbytes)
 
-	// return string and strip-out line-feed chars i.e. ascii(10)
-	idx := bytes.IndexByte(out, '\r')
-	if idx < 1 {
-		idx = len(out)
-	}
-	return string(out[:idx]), nil
+	return strings.TrimSpace(string(out)), nil //string(out[:idx]), nil
 }
 
 func makeKeyIv(passphrase string) ([]byte, []byte) {
@@ -95,7 +91,6 @@ func makeKeyIv(passphrase string) ([]byte, []byte) {
 
 // // -------------
 // // Sample to generate token at client
-// //
 // func generateToken() (string, error) {
 // 	plain_token := strconv.FormatInt(time.Now().UnixNano(), 10)
 // 	// create cipher
@@ -103,12 +98,20 @@ func makeKeyIv(passphrase string) ([]byte, []byte) {
 // 	if err != nil {
 // 		return "", err
 // 	}
-// 	// allocate space for ciphered data
-// 	out := make([]byte, len(plain_token))
 
-// 	aesEncrypter := cipher.NewCFBEncrypter(block, _iv)
-// 	aesEncrypter.XORKeyStream(out, []byte(plain_token))
+// 	bPlaintext := _PKCS5Padding([]byte(plain_token), aes.BlockSize, len(plain_token))
+// 	// allocate space for ciphered data
+// 	out := make([]byte, len(bPlaintext))
+
+// 	aesEncrypter := cipher.NewCBCEncrypter(block, _iv)
+// 	aesEncrypter.CryptBlocks(out, bPlaintext)
 
 // 	// return hex string
 // 	return hex.EncodeToString(out), nil
+// }
+
+// func _PKCS5Padding(ciphertext []byte, blockSize int, after int) []byte {
+// 	padding := (blockSize - len(ciphertext)%blockSize)
+// 	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
+// 	return append(ciphertext, padtext...)
 // }
